@@ -3,6 +3,8 @@
 export const dynamic = "force-dynamic"
 
 import { useEffect, useState } from "react"
+import { useSession } from "@/lib/auth-client"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -23,7 +25,7 @@ interface InterviewSession {
   technicalScore: number | null
 }
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const [sessions, setSessions] = useState<InterviewSession[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -61,95 +63,122 @@ export default function DashboardPage() {
       : 0
 
   return (
-    <div className="container mx-auto max-w-4xl py-8">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Your interview practice sessions
-          </p>
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto w-full max-w-6xl">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <p className="text-muted-foreground">
+              Your interview practice sessions
+            </p>
+          </div>
+          <Link href="/interview">
+            <Button>
+              <Play className="mr-2 h-4 w-4" />
+              New Interview
+            </Button>
+          </Link>
         </div>
-        <Link href="/interview">
-          <Button>
-            <Play className="mr-2 h-4 w-4" />
-            New Interview
-          </Button>
-        </Link>
-      </div>
 
-      <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                Total
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{sessions.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                Completed
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{completedSessions.length}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                Avg Score
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div
+                className={`text-2xl font-bold ${getScoreColor(averageScore)}`}
+              >
+                {completedSessions.length > 0 ? Math.round(averageScore) : "-"}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">
+                Grade
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {completedSessions.length > 0 ? getScoreGrade(averageScore) : "-"}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Total
-            </CardTitle>
+          <CardHeader>
+            <CardTitle>Sessions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{sessions.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Completed
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{completedSessions.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Avg Score
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div
-              className={`text-2xl font-bold ${getScoreColor(averageScore)}`}
-            >
-              {completedSessions.length > 0 ? Math.round(averageScore) : "-"}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-muted-foreground">
-              Grade
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {completedSessions.length > 0 ? getScoreGrade(averageScore) : "-"}
-            </div>
+            {sessions.length === 0 ? (
+              <div className="py-12 text-center">
+                <Target className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
+                <p className="mb-4 text-muted-foreground">No interviews yet</p>
+                <Link href="/interview">
+                  <Button>Start Interview</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {sessions.map((sessionData) => (
+                  <SessionCard key={sessionData.id} session={sessionData} />
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Sessions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {sessions.length === 0 ? (
-            <div className="py-12 text-center">
-              <Target className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
-              <p className="mb-4 text-muted-foreground">No interviews yet</p>
-              <Link href="/interview">
-                <Button>Start Interview</Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {sessions.map((sessionData) => (
-                <SessionCard key={sessionData.id} session={sessionData} />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   )
+}
+
+export default function DashboardPage() {
+  const { data: session, isPending } = useSession()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isPending && !session?.user) {
+      router.push("/login")
+    }
+  }, [session, isPending, router])
+
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!session?.user) {
+    return null
+  }
+
+  return <DashboardPageContent />
 }
 
 function SessionCard({ session }: { session: InterviewSession }) {

@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic"
 
 import { useState, useEffect, useRef } from "react"
+import { useSession } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -23,7 +24,7 @@ import { useTextToSpeech } from "@/hooks/use-text-to-speech"
 import { SetupForm } from "@/components/interview/setup-form"
 import { Loader2, Send, Mic, MicOff, Volume2, VolumeX } from "lucide-react"
 
-export default function InterviewPage() {
+function InterviewPageContent() {
   const router = useRouter()
 
   const [jobRole, setJobRole] = useState("Frontend Developer")
@@ -502,4 +503,29 @@ export default function InterviewPage() {
       </div>
     </div>
   )
+}
+
+export default function InterviewPage() {
+  const { data: session, isPending } = useSession()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isPending && !session?.user) {
+      router.push("/login")
+    }
+  }, [session, isPending, router])
+
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
+
+  if (!session?.user) {
+    return null
+  }
+
+  return <InterviewPageContent />
 }

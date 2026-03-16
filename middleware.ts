@@ -2,14 +2,15 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 // Auth enabled - users must sign in for interviews
-const DISABLE_AUTH = true
+const DISABLE_AUTH = false
 
-const protectedPaths = ["/dashboard", "/interview"]
+const protectedPaths = ["/dashboard", "/interview", "/profile", "/settings"]
 
 // Allowed origins for CORS (WebSocket server on port 3001)
 const ALLOWED_ORIGINS = [
   "http://localhost:3000",
   "http://localhost:3001",
+  "http://localhost:3007",
   process.env.NEXT_PUBLIC_APP_URL || "",
 ].filter(Boolean)
 
