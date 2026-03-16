@@ -5,37 +5,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 Live AI Interview Coach - A real-time multimodal AI agent that simulates technical job interviews using:
-- **Gemini Live API** for voice/video streaming
-- **Better Auth** for authentication
-- **Prisma** with PostgreSQL for data
-- **Next.js 16** App Router
+- **Gemini 2.0 Flash** for AI interview interactions
+- **Better Auth 1.4** for authentication
+- **Prisma 5** with PostgreSQL for data
+- **Next.js 16.1** App Router with Turbopack
 - **Vitest** for unit/integration/component tests
-- **Playwright** for E2E tests
+- **Playwright** for E2E tests (27 tests, 100% passing)
 
 ## Development Commands
 
 ```bash
-# Start development server (Turbopack on port 3000)
-npm run dev
+# Start development server (port 3000)
+npm run dev              # Standard Next.js dev server
+npm run dev:turbo        # With Turbopack (faster)
 
 # Start WebSocket server separately (port 3001)
 npm run ws:dev
 
-# Start both dev and WebSocket servers together
+# Start both servers together
 npm run dev:all
 
 # Production build
 npm run build
-
-# Start production server
-npm start
+npm start                # Runs on port 3000
 
 # Testing - Vitest (unit, integration, component)
 npm run test              # Watch mode
 npm run test:run          # Run once
 npm run test:ui           # Open Vitest UI
 npm run test:coverage     # Generate coverage report
-npx vitest tests/path/to/test.test.ts  # Single file
+npx vitest tests/path/to/test.test.ts              # Single file
+npx vitest tests/path/to/test.test.ts -t "test name"  # Single test
 
 # Testing - Playwright E2E
 npm run test:e2e          # Run all E2E tests
@@ -43,9 +43,10 @@ npm run test:e2e:ui       # Open Playwright UI
 npm run test:e2e:debug    # Debug mode
 npm run test:e2e:headed   # Run with visible browser
 npx playwright test --list  # List all tests
+npx playwright test tests/e2e/complete-feature-test.spec.ts  # Run specific file
 
 # Run all tests
-npm run test:all
+npm run test:all          # Run both Vitest and Playwright
 
 # Database operations
 npx prisma generate       # Generate Prisma Client after schema changes
@@ -66,42 +67,52 @@ npm run typecheck         # TypeScript check
 
 ### Stack & Frameworks
 - **Next.js 16.1** with App Router and Turbopack
-- **Better Auth 1.4** for authentication (email/password, OAuth ready)
+- **Better Auth 1.4** for authentication (email/password)
 - **Prisma 5** ORM with PostgreSQL
 - **Gemini 2.0 Flash** for AI interview interactions
 - **Tailwind CSS v4** with dark theme
-- **Vitest + Testing Library + MSW** for comprehensive testing
+- **Vitest + Testing Library + MSW** for unit/integration/component tests
 - **Playwright** for E2E testing
 
 ### Directory Structure
 ```
 app/
-├── (auth)/              # Route group for auth pages
-│   ├── login/           # Better Auth login
-│   └── register/        # Better Auth registration
+├── (auth)/              # Route group for auth pages (login, register)
 ├── api/
 │   ├── auth/[...all]/   # Better Auth API handler
 │   ├── analytics/       # Session analytics endpoint
-│   ├── session/         # Interview session CRUD
+│   ├── session/         # Interview session CRUD (start, chat, end)
 │   └── sessions/        # List user sessions
-├── dashboard/           # Protected dashboard route
-├── interview/           # Live interview page (protected)
+├── dashboard/[id]/      # Protected dashboard with session details
+├── interview/           # Live interview page (setup + active session)
 ├── login/               # Login page
 ├── register/            # Registration page
-├── layout.tsx           # Root layout
+├── profile/             # User profile page
+├── settings/            # User settings page
+├── layout.tsx           # Root layout with metadata
 └── page.tsx             # Landing page
 
 components/
-├── ui/                  # Base UI components (shadcn)
+├── ui/                  # Base UI components (shadcn/okech theme)
 ├── interview/           # Interview-specific components
+│   ├── setup-form.tsx   # Interview configuration form
+│   ├── video-feed.tsx   # Camera display
+│   ├── audio-waveform.tsx
+│   ├── confidence-meter.tsx
+│   ├── transcript-panel.tsx
+│   └── interview-controls.tsx
 ├── dashboard/           # Dashboard components
-└── layout/              # Navbar, Footer
+└── layout/
+    ├── navbar.tsx       # Enhanced with profile dropdown
+    └── footer.tsx
 
 hooks/
 ├── use-websocket.ts     # WebSocket connection manager
 ├── use-media-stream.ts  # Camera/mic stream handler
 ├── use-audio-playback.ts # AI voice playback
-└── use-confidence-score.ts # Live score state
+├── use-confidence-score.ts # Live score state
+├── use-speech-to-text.ts # STT hook
+└── use-text-to-speech.ts # TTS hook
 
 lib/
 ├── auth.ts              # Better Auth server config
@@ -109,11 +120,20 @@ lib/
 ├── db.ts                # Prisma client singleton
 ├── gemini.ts            # Gemini AI integration
 ├── audio-processor.ts   # Audio utilities
-└── vision-analyzer.ts   # Vision analysis utilities
+├── vision-analyzer.ts   # Face analysis (requires models)
+└── face-analyzer-fallback.ts # Simulated face analysis (when models missing)
+
+server/
+└── ws-server.ts         # WebSocket server (port 3001)
 
 tests/
 ├── setup.ts             # Global test configuration (MSW, mocks)
 ├── e2e/                 # Playwright E2E tests
+│   ├── auth.spec.ts           # Auth flow tests
+│   ├── dashboard.spec.ts      # Dashboard functionality
+│   ├── interview.spec.ts      # Interview workflow
+│   ├── navigation.spec.ts     # Navigation tests
+│   └── complete-feature-test.spec.ts  # Comprehensive test suite (27 tests)
 ├── integration/         # API route tests
 ├── components/          # Component tests
 ├── unit/                # Utility and hook tests
@@ -127,25 +147,28 @@ types/
 
 ### Route Protection
 
-Protected routes use middleware that checks for `better-auth.session_token` cookie. Redirects to `/login?redirect=...` if not authenticated.
+Protected routes use middleware that checks for `better-auth.session_token` cookie.
 
-**Protected paths**: `/interview`, `/dashboard`
+**Protected paths**: `/interview`, `/dashboard`, `/profile`, `/settings`
 
 **Important**: When adding new protected routes, add them to the `protectedPaths` array in `middleware.ts`.
 
-**Local Development**: Set `DISABLE_AUTH = true` in `middleware.ts` to bypass authentication.
+**Local Development**: Set `DISABLE_AUTH = true` in `middleware.ts` to bypass authentication for testing.
 
 ## Authentication (Better Auth)
 
 ### Server Configuration (`lib/auth.ts`)
-- Uses Prisma adapter with PostgreSQL
-- Email/password enabled with `bcryptjs` hashPassword function
-- Sessions expire after 7 days
-- Google OAuth ready (requires `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` env vars)
+```typescript
+emailAndPassword: {
+  enabled: true,
+  requireEmailVerification: false,
+  hashPassword: async (password) => await bcrypt.hash(password, 10),
+}
+```
 
 ### Client Usage
 ```typescript
-import { signIn, signUp, useSession } from "@/lib/auth-client"
+import { signIn, signUp, useSession, signOut } from "@/lib/auth-client"
 
 // In components
 const { data: session, isPending } = useSession()
@@ -155,24 +178,19 @@ await signIn.email({ email, password })
 
 // Sign up
 await signUp.email({ email, password, name })
+
+// Sign out
+await signOut()
 ```
 
 ### Server-Side Auth Check
 ```typescript
 import { auth } from "@/lib/auth"
-
 const session = await auth.api.getSession({ headers: request.headers })
 ```
 
 ### Known Issue: Auth Registration
-Better Auth 1.4+ requires explicit `hashPassword` function (already implemented in `lib/auth.ts`):
-```typescript
-emailAndPassword: {
-  enabled: true,
-  requireEmailVerification: false,
-  hashPassword: async (password) => await bcrypt.hash(password, 10),
-}
-```
+Better Auth 1.4+ requires explicit `hashPassword` function (already implemented). If registration still fails, use `DISABLE_AUTH = true` in middleware for local development.
 
 ## Database (Prisma + PostgreSQL)
 
@@ -180,7 +198,7 @@ emailAndPassword: {
 - **User, Session, Account** - Better Auth models (do not modify manually)
 - **InterviewSession** - Interview with scores, jobRole, difficulty, status
 - **Transcript** - Conversation messages (role: user/assistant/system)
-- **ConfidenceLog** - Real-time confidence metrics (eyeContact, posture, facialExpression, etc.)
+- **ConfidenceLog** - Real-time confidence metrics
 - **Report** - Post-session AI-generated analysis
 
 ### Database Connection
@@ -194,12 +212,14 @@ PostgreSQL runs in Docker via `docker-compose.yml`:
 ## Interview Flow
 
 ### Session Lifecycle
-1. User grants camera/mic permissions → `useMediaStream` hook
+1. User fills setup form (job role, difficulty, CV, job description, mode)
 2. POST `/api/session/start` → Creates `InterviewSession` record, returns session_id
-3. Client sends audio/video chunks via WebSocket (runs on port 3001)
-4. Vision analysis updates confidence scores every ~2 seconds
-5. POST `/api/session/end` → Calculates final scores, generates `Report`
-6. Redirect to dashboard with session details
+3. POST `/api/session/chat` with `isFirstMessage: true` → AI asks first question
+4. User responds via chat/voice
+5. POST `/api/session/chat` → AI provides feedback and asks follow-up
+6. Repeat steps 4-5 for conversation
+7. POST `/api/session/end` → Calculates final scores, generates `Report`
+8. Redirect to dashboard with session details
 
 ### WebSocket Message Types (`types/messages.ts`)
 - **AudioMessage** - PCM audio data from user
@@ -207,6 +227,15 @@ PostgreSQL runs in Docker via `docker-compose.yml`:
 - **TranscriptMessage** - Conversation text
 - **ConfidenceMessage** - Live confidence metrics
 - **ControlMessage** - Start/stop/pause actions
+
+### Face Analysis
+**Production**: Requires face-api.js models in `/public/models/`:
+- `tiny_face_detector_model-weights_manifest.json`
+- `face_landmark_68_model-weights_manifest.json`
+- `face_recognition_model-weights_manifest.json`
+- `face_expression_model-weights_manifest.json`
+
+**Fallback**: If models missing, `lib/face-analyzer-fallback.ts` provides simulated analysis based on interview context (answering, listening, thinking).
 
 ### Hooks Pattern
 - **useWebSocket** - Manages WebSocket connection with auto-reconnect
@@ -223,13 +252,37 @@ PostgreSQL runs in Docker via `docker-compose.yml`:
 - **MSW (Mock Service Worker)** for API mocking
 - **jsdom** for DOM environment
 
+### Test Status
+- **E2E Tests**: 27/27 passing (100%) in `complete-feature-test.spec.ts`
+- **Total Coverage**: ~188 tests (Vitest + Playwright)
+
 ### Test Setup (`tests/setup.ts`)
-The test setup includes critical mocks:
-- **MediaStream & mediaDevices** - Mock camera/mic access for interview tests
-- **WebSocket** - Mock WebSocket for real-time communication tests
+Critical mocks for interview functionality:
+- **MediaStream & mediaDevices** - Mock camera/mic access
+- **WebSocket** - Mock WebSocket for real-time communication
 - **IntersectionObserver & ResizeObserver** - Browser API mocks
 - **window.matchMedia** - Theme/media query mocks
 - **MSW handlers** - API route mocks for auth, session, analytics
+
+### Playwright Testing Notes
+**Important**: The Playwright config has `baseURL: 'http://localhost:3007'` but the dev server runs on port 3000. Use absolute URLs in tests or update the config.
+
+**Navigation Pattern for Next.js**: Use `Promise.all()` for reliable navigation:
+```typescript
+await Promise.all([
+  page.waitForURL(/\/interview/),
+  page.click('a:has-text("Start Interview")')
+]);
+```
+
+**Avoid Strict Mode Violations**: Use specific selectors:
+```typescript
+// Good
+await expect(page.getByRole('heading', { name: 'Welcome Back' })).toBeVisible();
+
+// Bad - matches multiple elements
+await expect(page.getByText('Sign In')).toBeVisible();
+```
 
 ### Running Tests
 ```bash
@@ -240,25 +293,15 @@ npm run test:ui       # Vitest UI
 npx vitest path/to/test.test.ts  # Single file
 
 # Playwright E2E
-# Note: Uses baseURL: http://localhost:3007
 npm run test:e2e          # Run all E2E tests
 npm run test:e2e:ui       # Playwright UI mode
 npm run test:e2e:debug    # Debug mode
 npm run test:e2e:headed   # Run with visible browser
-npx playwright test --list  # List all tests
+npx playwright test tests/e2e/complete-feature-test.spec.ts  # Single file
 
 # Run all tests
 npm run test:all          # Run both Vitest and Playwright
 ```
-
-### Test Coverage
-- **Vitest**: ~119 tests (unit, integration, component)
-- **Playwright**: ~69 E2E tests
-- **Total**: ~188 tests covering:
-  - E2E: Full auth flow, dashboard, interview workflow, navigation
-  - Integration: Auth API, session API
-  - Component: Navbar, interview controls, confidence meter
-  - Unit: Utilities, hooks
 
 ## API Routes
 
@@ -266,6 +309,7 @@ npm run test:all          # Run both Vitest and Playwright
 |-------|--------|---------|
 | `/api/auth/[...all]` | GET/POST | Better Auth handler |
 | `/api/session/start` | POST | Create interview session |
+| `/api/session/chat` | POST | Send message, get AI response |
 | `/api/session/end` | POST | End session, generate report |
 | `/api/sessions` | GET | List user's sessions |
 | `/api/analytics/[session_id]` | GET | Get session details + report |
@@ -289,7 +333,7 @@ See `.env.example` for all available variables.
 ### Next.js 16 Quirks
 - `params` in dynamic routes is a Promise: `await params.session_id`
 - `useSearchParams()` must be wrapped in `<Suspense>` boundary
-- Middleware deprecation warning is expected (use `proxy.ts` pattern if needed)
+- Client components cannot export metadata
 
 ### Type Safety
 - `useRef<T>()` requires an initial value (e.g., `useRef<string | undefined>(undefined)`)
@@ -303,19 +347,22 @@ See `.env.example` for all available variables.
 - WebSocket connections need a separate server (Next.js doesn't support WebSockets natively)
 - WebSocket server runs on port 3001, main app on port 3000
 - Consider using SSE for server→client streaming as an alternative
-- Dockerfile provided for Cloud Run/container deployment
+- Dockerfile and vercel.json provided for deployment
 
-### Testing Issues
-- Playwright config uses `localhost:3007` as baseURL - ensure dev server matches or update config
-- E2E tests may be blocked by auth registration issues - see `E2E-STATUS.md` for current status
-- Use `DISABLE_AUTH` flag in middleware for local testing without authentication
+### Testing with Auth Disabled
+For local E2E testing without authentication:
+1. Set `DISABLE_AUTH = true` in `middleware.ts`
+2. Profile/Settings pages will redirect to login or show minimal content
+3. All other pages will be accessible
 
-### Known Bugs Fixed
-1. **Theme Provider Crash** (`components/theme-provider.tsx:50`) - Fixed with `event.key?.toLowerCase()`
-2. **Auth Registration 500 Error** - Fixed by adding `hashPassword` function with bcryptjs
+### Known Issues & Workarounds
+1. **Auth Registration 500 Error** - Fixed with `hashPassword` function, but may still occur. Use `DISABLE_AUTH` for testing.
+2. **Theme Provider Crash** - Fixed with `event.key?.toLowerCase()`
+3. **Next.js Dev Overlay** - Can block Playwright clicks. Tests use Promise.all for reliability.
 
-## Additional Files
+## Additional Documentation
 
 - **`AGENTS.md`** - Agentic coding guidelines and style conventions
 - **`prd.md`** - Complete product requirements document
-- **`E2E-STATUS.md`** - Current E2E testing implementation status
+- **`FINAL-TEST-RESULTS.md`** - Latest E2E test results (27/27 passing)
+- **`README.md`** - Project overview and quick start guide
