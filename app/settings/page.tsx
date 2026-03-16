@@ -19,8 +19,8 @@ export default function SettingsPage() {
 
   if (isPending) {
     return (
-      <div className="container py-12">
-        <div className="mx-auto max-w-4xl">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mx-auto w-full max-w-6xl">
           <div className="animate-pulse space-y-4">
             <div className="h-32 bg-muted rounded-lg" />
             <div className="h-64 bg-muted rounded-lg" />
@@ -42,7 +42,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container py-12">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
       <div className="mx-auto max-w-4xl space-y-6">
         {/* Header */}
         <div>

@@ -299,8 +299,8 @@ export default function InterviewPage() {
 
   if (!stream && interviewType !== "chat") {
     return (
-      <div className="container py-12">
-        <div className="mx-auto max-w-2xl">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mx-auto w-full max-w-3xl">
           <SetupForm
             jobRole={jobRole}
             setJobRole={setJobRole}
@@ -328,8 +328,8 @@ export default function InterviewPage() {
 
   if (!isActive) {
     return (
-      <div className="container py-12">
-        <div className="mx-auto max-w-2xl">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mx-auto w-full max-w-3xl">
           <SetupForm
             jobRole={jobRole}
             setJobRole={setJobRole}
@@ -350,7 +350,7 @@ export default function InterviewPage() {
   }
 
   return (
-    <div className="container py-6">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
         <div className="space-y-4 lg:col-span-3">
           <div className="flex items-center justify-between">
