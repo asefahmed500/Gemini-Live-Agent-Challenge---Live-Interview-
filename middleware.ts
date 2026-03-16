@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
 // Auth enabled - users must sign in for interviews
-const DISABLE_AUTH = false
+const DISABLE_AUTH = true
 
 const protectedPaths = ["/dashboard", "/interview"]
 
