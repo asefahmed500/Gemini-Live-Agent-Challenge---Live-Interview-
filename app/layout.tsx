@@ -4,7 +4,16 @@ import { Footer } from "@/components/layout/footer"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: {
+    default: "LiveInterview - AI-Powered Interview Practice",
+    template: "%s | LiveInterview"
+  },
+  description: "Practice with AI-powered interviews. Get real-time feedback on your responses, confidence, and communication skills."
+}
 
 const fontSans = Geist({
   subsets: ["latin"],
