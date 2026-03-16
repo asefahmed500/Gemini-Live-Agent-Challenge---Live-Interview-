@@ -44,3 +44,4 @@ pnpm-debug.log*
 next-env.d.ts
 .playwright-mcp/
 test-screenshots/
+test-results.txt
