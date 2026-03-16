@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { generateInterviewReport } from "@/lib/gemini"
+import { handleCorsOptions, applyCorsHeaders } from "@/lib/cors"
+
+export async function OPTIONS(request: NextRequest) {
+  return handleCorsOptions(request) || new NextResponse(null, { status: 200 })
+}
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get("origin")
+
   try {
     const body = await request.json()
     const { sessionId } = body
 
     if (!sessionId) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: "sessionId is required" },
         { status: 400 }
       )
+      return applyCorsHeaders(response, origin)
     }
 
     const interviewSession = await prisma.interviewSession.findUnique({
@@ -20,7 +28,11 @@ export async function POST(request: NextRequest) {
     })
 
     if (!interviewSession) {
-      return NextResponse.json({ error: "Session not found" }, { status: 404 })
+      const response = NextResponse.json(
+        { error: "Session not found" },
+        { status: 404 }
+      )
+      return applyCorsHeaders(response, origin)
     }
 
     const confidenceLogs = interviewSession.confidenceLog
@@ -112,16 +124,19 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       sessionId: updatedSession.id,
       status: updatedSession.status,
       reportId: report.id,
     })
+
+    return applyCorsHeaders(response, origin)
   } catch (error) {
     console.error("Error ending session:", error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     )
+    return applyCorsHeaders(response, origin)
   }
 }

@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { handleCorsOptions, applyCorsHeaders } from "@/lib/cors"
+
+export async function OPTIONS(request: NextRequest) {
+  return handleCorsOptions(request) || new NextResponse(null, { status: 200 })
+}
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ session_id: string }> }
 ) {
+  const origin = request.headers.get("origin")
+
   try {
     // No auth check - allow guest access
     const { session_id: sessionId } = await params
@@ -24,12 +31,14 @@ export async function GET(
     })
 
     if (!interviewSession) {
-      return NextResponse.json({ error: "Session not found" }, { status: 404 })
+      const response = NextResponse.json(
+        { error: "Session not found" },
+        { status: 404 }
+      )
+      return applyCorsHeaders(response, origin)
     }
 
-    // No ownership check - allow guest access to any session
-
-    return NextResponse.json({
+    const response = NextResponse.json({
       sessionId: interviewSession.id,
       jobRole: interviewSession.jobRole,
       difficulty: interviewSession.difficulty,
@@ -46,8 +55,14 @@ export async function GET(
       confidenceLog: interviewSession.confidenceLog,
       report: interviewSession.report,
     })
+
+    return applyCorsHeaders(response, origin)
   } catch (error) {
     console.error("Error fetching analytics:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    const response = NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
+    return applyCorsHeaders(response, origin)
   }
 }

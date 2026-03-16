@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { processInterviewResponse, createInterviewSession } from "@/lib/gemini"
+import { handleCorsOptions, applyCorsHeaders } from "@/lib/cors"
 
 function getDefaultQuestion(jobRole: string, difficulty: string): string {
   const questions: Record<
@@ -63,7 +64,13 @@ function getNextQuestion(jobRole: string): string {
   return questions[Math.floor(Math.random() * questions.length)]
 }
 
+export async function OPTIONS(request: NextRequest) {
+  return handleCorsOptions(request) || new NextResponse(null, { status: 200 })
+}
+
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get("origin")
+
   try {
     const body = await request.json()
     const {
@@ -77,10 +84,11 @@ export async function POST(request: NextRequest) {
     } = body
 
     if (!sessionId || !userMessage) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: "sessionId and userMessage are required" },
         { status: 400 }
       )
+      return applyCorsHeaders(response, origin)
     }
 
     const session = await prisma.interviewSession.findUnique({
@@ -89,7 +97,11 @@ export async function POST(request: NextRequest) {
     })
 
     if (!session) {
-      return NextResponse.json({ error: "Session not found" }, { status: 404 })
+      const response = NextResponse.json(
+        { error: "Session not found" },
+        { status: 404 }
+      )
+      return applyCorsHeaders(response, origin)
     }
 
     const jobRoleToUse = session.jobRole || jobRole || "Software Developer"
@@ -182,16 +194,19 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       feedback: aiResponse.feedback,
       nextQuestion: aiResponse.nextQuestion,
     })
+
+    return applyCorsHeaders(response, origin)
   } catch (error) {
     console.error("Error in chat:", error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     )
+    return applyCorsHeaders(response, origin)
   }
 }

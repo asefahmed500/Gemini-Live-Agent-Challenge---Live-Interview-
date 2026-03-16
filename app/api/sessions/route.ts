@@ -1,7 +1,14 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { handleCorsOptions, applyCorsHeaders } from "@/lib/cors"
 
-export async function GET() {
+export async function OPTIONS(request: NextRequest) {
+  return handleCorsOptions(request) || new NextResponse(null, { status: 200 })
+}
+
+export async function GET(request: NextRequest) {
+  const origin = request.headers.get("origin")
+
   try {
     // No auth check - get all sessions for demo
     const sessions = await prisma.interviewSession.findMany({
@@ -9,12 +16,14 @@ export async function GET() {
       take: 20,
     })
 
-    return NextResponse.json({ sessions })
+    const response = NextResponse.json({ sessions })
+    return applyCorsHeaders(response, origin)
   } catch (error) {
     console.error("Error fetching sessions:", error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     )
+    return applyCorsHeaders(response, origin)
   }
 }

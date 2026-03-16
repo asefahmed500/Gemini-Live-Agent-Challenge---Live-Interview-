@@ -38,5 +38,7 @@ export const auth = betterAuth({
     crossSubDomainCookies: {
       enabled: false,
     },
+    // Allow CORS for WebSocket server and other origins
+    useSecureCookies: process.env.NODE_ENV === "production",
   },
 })

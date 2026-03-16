@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { randomBytes } from "crypto"
+import { handleCorsOptions, applyCorsHeaders } from "@/lib/cors"
+
+export async function OPTIONS(request: NextRequest) {
+  return handleCorsOptions(request) || new NextResponse(null, { status: 200 })
+}
 
 export async function POST(request: NextRequest) {
+  const origin = request.headers.get("origin")
+
   try {
     const body = await request.json()
     const {
@@ -14,10 +21,11 @@ export async function POST(request: NextRequest) {
     } = body
 
     if (!jobRole) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: "jobRole is required" },
         { status: 400 }
       )
+      return applyCorsHeaders(response, origin)
     }
 
     // Create interview session
@@ -35,18 +43,21 @@ export async function POST(request: NextRequest) {
     // Generate token
     const token = randomBytes(32).toString("hex")
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       sessionId: interviewSession.id,
       status: interviewSession.status,
       jobRole: interviewSession.jobRole,
       difficulty: interviewSession.difficulty,
       token,
     })
+
+    return applyCorsHeaders(response, origin)
   } catch (error) {
     console.error("Error starting session:", error)
-    return NextResponse.json(
+    const response = NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     )
+    return applyCorsHeaders(response, origin)
   }
 }
