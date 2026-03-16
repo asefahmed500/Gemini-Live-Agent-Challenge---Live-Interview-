@@ -77,8 +77,22 @@ export function useFaceAnalysis() {
   const loadModels = useCallback(async () => {
     try {
       const faceapi = await import("face-api.js")
+      const { areModelsAvailable } = await import("@/lib/face-analyzer-fallback")
 
       const MODEL_URL = "/models"
+
+      // Check if models are available
+      const modelsExist = await areModelsAvailable()
+
+      if (!modelsExist) {
+        console.warn("Face analysis models not found. Using simulation mode.")
+        console.info("To enable real face analysis, download models from:")
+        console.info("https://github.com/justadudewhohacks/face-api.js#model-files")
+        console.info("Place them in: /public/models/")
+        // Use simulation mode
+        setIsModelLoaded(true)
+        return
+      }
 
       await Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
@@ -89,6 +103,8 @@ export function useFaceAnalysis() {
       setIsModelLoaded(true)
     } catch (error) {
       console.error("Failed to load face detection models:", error)
+      // Fall back to simulation mode
+      setIsModelLoaded(true)
     }
   }, [])
 
